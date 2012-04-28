@@ -80,7 +80,6 @@ jQuery(function($) {
 		player.status.action = "standing";
 	};
 
-
 	function createProjectile(position, direction) {
 		var p = {
 			speed: 100,
