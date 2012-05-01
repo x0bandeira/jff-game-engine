@@ -7,6 +7,37 @@ jQuery(function($) {
 	var player = {};
 
 	player.sprite = {};
+  var image_map = 0 && new ImageMap(
+    './playersprite.jpg',
+    [
+      new ImageMap.Position("north-walk-right", point(-75,  -5)),
+      new ImageMap.Position("north-walk-left" , point(-122, -5)),
+      new ImageMap.Position("north-stand"     , point(-98,  -5)),
+      new ImageMap.Position("east-walk-right" , point(-74,  -37)),
+      new ImageMap.Position("east-walk-left"  , point(-122, -37)),
+      new ImageMap.Position("east-stand"      , point(-99,  -37)),
+      new ImageMap.Position("south-walk-right", point(-75,  -69)),
+      new ImageMap.Position("south-walk-left" , point(-122, -69)),
+      new ImageMap.Position("south-stand"     , point(-98,  -69)),
+      new ImageMap.Position("west-walk-right" , point(-74,  -101)),
+      new ImageMap.Position("west-walk-left"  , point(-122, -101)),
+      new ImageMap.Position("west-stand"      , point(-99,  -101))
+    ]
+  );
+
+	if (0) animations.walking = {
+    south: new Animation.ImageMap({
+      duration: 1,
+      target: player.sprite,
+      image_map: image_map, 
+      steps: [
+        "south-walk-right",
+        "south-stand",
+        "south-walk-left",
+        "south-stand"
+      ]})
+  };
+
 	player.sprite.positions = {
 		"north-walk-right" : 	[-75,  -5],
 		"north-walk-left" : 	[-122, -5],
@@ -22,22 +53,24 @@ jQuery(function($) {
 		"west-stand" : 			[-99,  -101]
 	};
 
-	player.sprite.animations = {};
+  var animations = {walking: {}, standing: {}, attacking: {}};
+	player.sprite.animations = animations;
 
-	player.sprite.animations.walking = [
-		"{{direction}}-walk-right",
-		"{{direction}}-stand",
-		"{{direction}}-walk-left",
-		"{{direction}}-stand"
-	];
+	animations.walking.south = [ "south-walk-right", "south-stand", "south-walk-left", "south-stand" ];
+	animations.standing.south = [ "south-stand" ];
+	animations.attacking.south = [ "south-stand" ];
 
-	player.sprite.animations.standing = [
-		"{{direction}}-stand"
-	];
+	animations.walking.north = [ "north-walk-right", "north-stand", "north-walk-left", "north-stand" ];
+	animations.standing.north = [ "north-stand" ];
+	animations.attacking.north = [ "north-stand" ];
 
-	player.sprite.animations.attacking = [
-		"{{direction}}-stand"
-	];
+	animations.walking.west = [ "west-walk-right", "west-stand", "west-walk-left", "west-stand" ];
+	animations.standing.west = [ "west-stand" ];
+	animations.attacking.west = [ "west-stand" ];
+
+	animations.walking.east = [ "east-walk-right", "east-stand", "east-walk-left", "east-stand" ];
+	animations.standing.east = [ "east-stand" ];
+	animations.attacking.east = [ "east-stand" ];
 
 	player.sprite.render = function() {
 		this.html = $("<div>").css({
@@ -51,11 +84,10 @@ jQuery(function($) {
 	player.sprite.collisionBox = collisionBox(point(0, 0), point(20, 30));
 
 	player.sprite.animate = function(frame) {
-		var animation = this.animations[player.status.action];
+		var animation = this.animations[player.status.action][player.status.direction];
 
-		var frameN = frame.tickFor(animation.length);
-
-		var frameImage = animation[frameN].replace("{{direction}}", player.status.direction);
+		var frameN = frame.adjustedFor(animation.length);
+    var frameImage = animation[frameN.index];
 		var position = this.positions[frameImage];
 		var x = position[0], y = position[1];
 
@@ -254,53 +286,18 @@ jQuery(function($) {
 			player.status.action = "attacking";
 	});
 
-
-	game.loop.updateFrame = function() {
-		var frame = game.loop.currentFrame ? 
-			game.loop.currentFrame.nextFrame()
-			: createFrame(0, game.loop.fps);
-
-		game.loop.currentFrame = frame; 
-	};
-
-	function createFrame(n, fps) {
-		var stage = (n + 1) / fps;
-		return {
-			n: n, 
-			fps: fps,
-			nextFrame: function() {
-				var m = n + 1 < fps ? n + 1 : 0;
-				return createFrame(m, fps);
-			},
-			tickFor: function(frames) {
-				var ticks = fps / frames;
-
-				var tick = _.find(_.range(1, frames), function(i) {
-					return n < i * ticks;
-				});
-
-				return tick || 0;
-			}
-		};
-	}
-
-	function pauseAfter(n) {
-		if (game.loop.currentFrame.n === n - 1) game.loop.paused = true;
-	}
-
-	setInterval(function() {
-		if (game.loop.paused) return;
-
-		game.loop.updateFrame();
-		var frame = game.loop.currentFrame;
-
+  var loop = new Loop({fps: 24}, function(frame) {
 		try {
 			map.nextTick(frame);
 			// pauseAfter(24);
 		} catch(e) {
 			console.log("crash... pausing")
-			game.loop.paused = true;
+      console.log(e.stack)
+      loop.forceStop();
 			throw e;
 		}
-	}, 1000 / game.loop.fps);
+  });
+
+  loop.start();
+
 });
