@@ -1,4 +1,5 @@
 Animations = Animations || {}
+Loop = require('loop').Loop
 
 class Animations.ImageMap
   constructor: ({@duration, @image_map, @steps, @target}) ->

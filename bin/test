@@ -1,0 +1,3 @@
+#!/bin/sh
+
+NODE_PATH=`pwd`/src:`pwd`/node_modules jasmine-node --coffee spec/
